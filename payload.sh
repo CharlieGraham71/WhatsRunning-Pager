@@ -1,16 +1,33 @@
 #!/bin/sh
 
 clear
-CPU_LINE=$(top -bn1 | grep "^CPU:")
 
+CPU_LINE=$(top -bn1 | grep "^CPU:")
 
 echo "=============================="
 echo " WHAT'S RUNNING?"
 echo "=============================="
 echo
+
 echo "$CPU_LINE"
 echo
+IDLE=$(echo "$CPU_LINE" | awk '{print $8}' | tr -d '%')
 
+if [ "$IDLE" -gt 75 ]; then
+    echo "Health: GOOD"
+elif [ "$IDLE" -gt 50 ]; then
+    echo "Health: MODERATE"
+else
+    echo "Health: HIGH LOAD"
+fi
+
+echo
+if pgrep pineapd >/dev/null || pgrep blue5 >/dev/null
+then
+    echo "Status: ACTIVE RECON"
+else
+    echo "Status: IDLE"
+fi
 
 echo
 
