@@ -3,6 +3,7 @@
 . ./lib/services.sh
 . ./lib/kill.sh
 . ./lib/managed.sh
+. ./lib/recon.sh
 
 clear
 
@@ -64,6 +65,8 @@ top -bn1 | sed -n '5,8p'
 
 echo
 echo
+show_recon_stats
+
 echo "Actions"
 echo "-------"
 echo "1) Stop Wireless Recon"
