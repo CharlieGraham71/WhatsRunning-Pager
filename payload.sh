@@ -1,5 +1,7 @@
 #!/bin/sh
 
+. ./lib/services.sh
+
 clear
 
 CPU_LINE=$(top -bn1 | grep "^CPU:")
@@ -41,19 +43,7 @@ fi
 
 echo
 
-check_service() {
-    NAME="$1"
-    DESC="$2"
 
-    PID=$(pgrep "$NAME" | head -n1)
-
-    if [ -n "$PID" ]; then
-        echo "[+] $NAME"
-        echo "    $DESC"
-        echo "    PID: $PID"
-        echo
-    fi
-}
 
 check_service pineapd "Wireless Recon"
 check_service blue5 "Bluetooth Recon"
