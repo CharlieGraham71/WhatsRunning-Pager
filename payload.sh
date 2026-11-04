@@ -1,6 +1,8 @@
 #!/bin/sh
 
 . ./lib/services.sh
+. ./lib/kill.sh
+. ./lib/managed.sh
 
 clear
 
@@ -46,7 +48,13 @@ echo
 
 
 check_service pineapd "Wireless Recon"
+managed_service pineapd
+echo
+
 check_service blue5 "Bluetooth Recon"
+managed_service blue5
+echo
+
 check_service hostapd "Access Point Service"
 check_service dnsmasq "DHCP/DNS Service"
 echo "Top Process Activity"
@@ -55,4 +63,24 @@ echo "--------------------"
 top -bn1 | sed -n '5,8p'
 
 echo
+echo
+echo "Actions"
+echo "-------"
+echo "1) Stop Wireless Recon"
+echo "2) Stop Bluetooth Recon"
+echo "3) Exit"
+echo
+
+read -p "Select: " CHOICE
+
+case "$CHOICE" in
+    1)
+        kill_service pineapd
+        ;;
+    2)
+        kill_service blue5
+        ;;
+    *)
+        ;;
+esac
 exit 0

@@ -1,14 +1,18 @@
 kill_service() {
 
-    case "$1" in
+    SERVICE="$1"
+
+    case "$SERVICE" in
         pineapd)
-            pkill pineapd
+            killall pineapd
+            echo "[STOPPED] Wireless Recon"
             ;;
         blue5)
-            pkill blue5
+            killall blue5
+            echo "[STOPPED] Bluetooth Recon"
             ;;
         *)
-            echo "Protected service"
+            echo "[PROTECTED SERVICE]"
             ;;
     esac
 
