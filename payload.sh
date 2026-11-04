@@ -24,7 +24,17 @@ fi
 echo
 if pgrep pineapd >/dev/null || pgrep blue5 >/dev/null
 then
-    echo "Status: ACTIVE RECON"
+    if pgrep pineapd >/dev/null || pgrep blue5 >/dev/null
+then
+    STATUS="ACTIVE RECON"
+    BATTERY="MODERATE"
+else
+    STATUS="IDLE"
+    BATTERY="LOW"
+fi
+
+echo "Status: $STATUS"
+echo "Battery Impact: $BATTERY"
 else
     echo "Status: IDLE"
 fi
@@ -49,5 +59,10 @@ check_service pineapd "Wireless Recon"
 check_service blue5 "Bluetooth Recon"
 check_service hostapd "Access Point Service"
 check_service dnsmasq "DHCP/DNS Service"
+echo "Top Process Activity"
+echo "--------------------"
 
+top -bn1 | sed -n '5,8p'
+
+echo
 exit 0
