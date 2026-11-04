@@ -2,8 +2,7 @@
 
 clear
 CPU_LINE=$(top -bn1 | grep "^CPU:")
-CPU_IDLE=$(top -bn1 | awk '/CPU:/ {print $8}' | tr -d '%')
-CPU_USED=$((100 - CPU_IDLE))
+
 
 echo "=============================="
 echo " WHAT'S RUNNING?"
@@ -12,7 +11,7 @@ echo
 echo "$CPU_LINE"
 echo
 
-echo "CPU Usage: ${CPU_USED}%"
+
 echo
 
 check_service() {
