@@ -7,15 +7,23 @@ echo " WHAT'S RUNNING?"
 echo "=============================="
 echo
 
-for PROC in pineapd blue5 hostapd dnsmasq
-do
-    PID=$(pgrep "$PROC" | head -n1)
+check_service() {
+    NAME="$1"
+    DESC="$2"
+
+    PID=$(pgrep "$NAME" | head -n1)
 
     if [ -n "$PID" ]; then
-        echo "[+] $PROC"
+        echo "[+] $NAME"
+        echo "    $DESC"
         echo "    PID: $PID"
         echo
     fi
-done
+}
+
+check_service pineapd "Wireless Recon"
+check_service blue5 "Bluetooth Recon"
+check_service hostapd "Access Point Service"
+check_service dnsmasq "DHCP/DNS Service"
 
 exit 0
