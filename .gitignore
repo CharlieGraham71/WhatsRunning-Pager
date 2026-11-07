@@ -1,0 +1,9 @@
+# Editor / OS cruft
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# Local test artifacts
+*.log
+*.tmp

@@ -1,3 +1,6 @@
+# lib/recon.sh — staged helper: detailed RECON database view.
+# Not yet sourced by payload.sh (the RECON Status screen uses an inline summary);
+# kept for the planned richer recon breakdown.
 show_recon_stats() {
 
     echo "Recon Data"

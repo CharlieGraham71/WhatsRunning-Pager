@@ -1,3 +1,5 @@
+# lib/services.sh — sourced by payload.sh.
+# check_service NAME DESC: prints a uniform block if process NAME is running.
 check_service() {
     NAME="$1"
     DESC="$2"
