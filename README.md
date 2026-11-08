@@ -17,6 +17,15 @@ all from the pager's menu.
 - Bluetooth status (active / passive, from `/etc/config/blue5`)
 - Running services — detects `pineapd`, `hostapd`, `blue5`, and `dnsmasq`
 
+**Control**
+- Service Control — turn **PineAP**, **Bluetooth**, and **recon logging** on/off
+  from the pager, each behind a YES/NO confirmation and verified afterwards:
+  - PineAP: toggles the `pineap_disabled` flag pineapd reads (pineapd is
+    respawned by the Pineapple supervisor, so the flag is the supported switch,
+    not stopping the process)
+  - Bluetooth: real `/etc/init.d/blue5` stop / start
+  - Recon logging: toggles `logrecon` (leaves PineAP running)
+
 **Storage & cleanup**
 - Storage breakdown (PCAPs, RECON, handshakes, Wigle, total)
 - Safe "Clear Data" with per-category **confirmation prompts** for PCAPs,
@@ -38,10 +47,10 @@ The script is `/bin/sh` (busybox/ash) compatible. It relies on the pager's
 ```
 payload.sh        # main menu loop + all screens
 lib/
-  services.sh     # check_service() — used by the Running Services screen
+  services.sh     # check_service()  — Running Services screen
+  kill.sh         # svc_* / pineap_set / recon_logging_set — Service Control screen
   recon.sh        # show_recon_stats() — staged (detailed recon view)
-  managed.sh      # managed_service() — staged (process-termination feature)
-  kill.sh         # kill_service()    — staged (process-termination feature)
+  managed.sh      # managed_service()  — staged (unused; superseded by kill.sh)
 ```
 
 The `lib/` helpers prefixed "staged" are scaffolding for planned features and
@@ -49,7 +58,6 @@ are not yet wired into `payload.sh`.
 
 ## Planned
 
-- Process termination (stop services from the pager — `lib/kill.sh` / `managed.sh`)
 - "Why Is My Pager Hot?" — top CPU-consuming processes
 - Payload detection — show which pager payload is currently running
 - Richer recon breakdown (`lib/recon.sh`)
