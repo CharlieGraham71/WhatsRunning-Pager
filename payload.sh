@@ -61,6 +61,14 @@ health_from_idle() {
     fi
 }
 
+# Load % (100 - idle), or "--" when idle isn't a number.
+load_from_idle() {
+    case "$1" in
+        ''|*[!0-9]*) echo "--" ;;
+        *) echo "$((100 - $1))%" ;;
+    esac
+}
+
 recon_status() {
     [ "$(config_flag /etc/config/pineapd logrecon)" = "1" ] && echo "ENABLED" || echo "DISABLED"
 }
@@ -118,7 +126,7 @@ Battery:
 $(battery_level)%
 
 CPU:
-$(health_from_idle "$IDLE")
+$(load_from_idle "$IDLE") load
 
 RECON:
 $(recon_status)
