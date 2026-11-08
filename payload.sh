@@ -11,12 +11,90 @@
 # detection (and uci/init calls) silently find nothing.
 export PATH="/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
 
-SCRIPT_DIR=$(dirname "$0")
+# Helpers are INLINED (not sourced from lib/) on purpose: the Pager's payload
+# launcher copies only this file to /tmp and runs it there, so $0's directory
+# has no lib/ and any `. lib/...` would silently fail. The lib/*.sh files in
+# the repo mirror these for readability. Keep the two in sync.
 
-# Shared helper: check_service() prints running services in a uniform format.
-. "$SCRIPT_DIR/lib/services.sh"
-# Service control: svc_state/svc_stop/svc_start/recon_logging_set.
-. "$SCRIPT_DIR/lib/kill.sh"
+# check_service NAME DESC: print a uniform block if process NAME is running.
+# pidof lives in /bin (always on PATH); first pid via pure shell (no awk/head).
+check_service() {
+    NAME="$1"
+    DESC="$2"
+    PID=$(pidof "$NAME" 2>/dev/null)
+    PID=${PID%% *}
+    if [ -n "$PID" ]; then
+        echo "[+] $NAME"
+        echo "    $DESC"
+        echo "    PID: $PID"
+        echo
+    fi
+}
+
+# svc_state NAME -> "running" | "stopped" (an /etc/init.d service).
+svc_state() {
+    if /etc/init.d/"$1" status 2>/dev/null | grep -qi running; then
+        echo "running"
+    elif pidof "$1" >/dev/null 2>&1 || pgrep "$1" >/dev/null 2>&1; then
+        echo "running"
+    else
+        echo "stopped"
+    fi
+}
+
+# svc_stop / svc_start NAME LABEL -> PROMPT body; verify the result.
+svc_stop() {
+    /etc/init.d/"$1" stop >/dev/null 2>&1
+    sleep 1
+    if [ "$(svc_state "$1")" = "stopped" ]; then
+        echo "$2
+
+STOPPED"
+    else
+        echo "$2
+
+STILL RUNNING
+(respawned?)"
+    fi
+}
+svc_start() {
+    /etc/init.d/"$1" start >/dev/null 2>&1
+    sleep 1
+    if [ "$(svc_state "$1")" = "running" ]; then
+        echo "$2
+
+STARTED"
+    else
+        echo "$2
+
+FAILED TO START"
+    fi
+}
+
+# PineAP: pineapd is respawned by the Pineapple supervisor, so toggle the
+# pineap_disabled flag it reads (0 = on, 1 = off) and reload, don't stop it.
+pineap_state() {
+    [ "$(uci -q get pineapd.@hostapd[0].pineap_disabled)" = "1" ] && echo "OFF" || echo "ON"
+}
+pineap_set() {
+    case "$1" in
+        off) uci set pineapd.@hostapd[0].pineap_disabled='1' 2>/dev/null ;;
+        on)  uci set pineapd.@hostapd[0].pineap_disabled='0' 2>/dev/null ;;
+        *)   return ;;
+    esac
+    uci commit pineapd 2>/dev/null
+    /etc/init.d/pineapd reload >/dev/null 2>&1
+}
+
+# recon logging: toggle logrecon without stopping PineAP. Applies now only if
+# pineapd is up; otherwise it takes effect on the next start.
+recon_logging_set() {
+    uci set pineapd.@pineapd[0].logrecon="$1" 2>/dev/null
+    uci commit pineapd 2>/dev/null
+    if [ "$(svc_state pineapd)" = "running" ]; then
+        /etc/init.d/pineapd reload >/dev/null 2>&1
+    fi
+}
 
 # ── helpers ────────────────────────────────────────────────────────────────
 # Metrics are computed lazily (only inside the menu branch that needs them) so
@@ -396,7 +474,7 @@ esac
 "About")
 PROMPT "WHATSRUNNING
 
-Version 2.2.1
+Version 2.2.2
 
 Native Pager Utility
 
