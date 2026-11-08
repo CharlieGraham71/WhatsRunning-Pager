@@ -106,6 +106,7 @@ do
 
 CHOICE=$(LIST_PICKER \
 "WhatsRunning" \
+"Service Control" \
 "System Health" \
 "CPU Status" \
 "Memory" \
@@ -113,12 +114,11 @@ CHOICE=$(LIST_PICKER \
 "RECON Status" \
 "Bluetooth Status" \
 "Running Services" \
-"Service Control" \
 "Storage" \
 "Clear Data" \
 "About" \
 "Exit" \
-"System Health")
+"Service Control")
 
 case "$CHOICE" in
 "System Health")
