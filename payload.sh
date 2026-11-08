@@ -391,7 +391,7 @@ esac
 "About")
 PROMPT "WHATSRUNNING
 
-Version 2.1
+Version 2.2
 
 Native Pager Utility
 
