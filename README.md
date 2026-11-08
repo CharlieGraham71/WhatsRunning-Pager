@@ -19,11 +19,12 @@ all from the pager's menu.
 
 **Control**
 - Service Control — turn **PineAP**, **Bluetooth**, and **recon logging** on/off
-  from the pager, each behind a YES/NO confirmation and verified afterwards:
-  - PineAP: toggles the `pineap_disabled` flag pineapd reads (pineapd is
-    respawned by the Pineapple supervisor, so the flag is the supported switch,
-    not stopping the process)
-  - Bluetooth: real `/etc/init.d/blue5` stop / start
+  from the pager, each behind a YES/NO confirmation and verified afterwards.
+  None of these can be stopped by killing a process — pineapd and blue5 are
+  respawned by the Pineapple master — so each uses the firmware's own switch:
+  - PineAP: toggles the `pineap_disabled` flag pineapd reads, then reloads it
+  - Bluetooth: `blue5ctl end` / `new` over the daemon's socket (stops/starts
+    the Bluetooth scan; the blue5 daemon keeps running)
   - Recon logging: toggles `logrecon` (leaves PineAP running)
 
 **Storage & cleanup**

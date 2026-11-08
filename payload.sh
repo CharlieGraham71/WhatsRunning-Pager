@@ -42,33 +42,22 @@ svc_state() {
     fi
 }
 
-# svc_stop / svc_start NAME LABEL -> PROMPT body; verify the result.
-svc_stop() {
-    /etc/init.d/"$1" stop >/dev/null 2>&1
-    sleep 1
-    if [ "$(svc_state "$1")" = "stopped" ]; then
-        echo "$2
-
-STOPPED"
-    else
-        echo "$2
-
-STILL RUNNING
-(respawned?)"
-    fi
+# Bluetooth recon is the blue5 daemon's database scan. The blue5 process is
+# respawned by the Pineapple supervisor if stopped, so don't stop the process
+# — control the scan over its socket with blue5ctl (end = stop collecting,
+# new = start). The "db" status field is the live on/off.
+bt_recon_state() {
+    case "$(blue5ctl status 2>/dev/null | awk '/^db /{print $2}')" in
+        logging) echo "ON" ;;
+        ended)   echo "OFF" ;;
+        *)       echo "--" ;;
+    esac
 }
-svc_start() {
-    /etc/init.d/"$1" start >/dev/null 2>&1
-    sleep 1
-    if [ "$(svc_state "$1")" = "running" ]; then
-        echo "$2
-
-STARTED"
-    else
-        echo "$2
-
-FAILED TO START"
-    fi
+bt_recon_set() {
+    case "$1" in
+        off) blue5ctl end >/dev/null 2>&1 ;;
+        on)  blue5ctl new >/dev/null 2>&1 ;;   # no name = keep current scan name
+    esac
 }
 
 # PineAP: pineapd is respawned by the Pineapple supervisor, so toggle the
@@ -297,7 +286,7 @@ $SERVICES"
 "Service Control")
 
 PINEAP_STATE=$(pineap_state)
-BLUE_STATE=$(svc_state blue5)
+BLUE_STATE=$(bt_recon_state)
 RECON_STATE=$(recon_status)
 
 SVC_CHOICE=$(LIST_PICKER \
@@ -333,12 +322,22 @@ fi
 ;;
 
 "Bluetooth: $BLUE_STATE")
-if [ "$BLUE_STATE" = "running" ]; then
-    CONFIRM=$(LIST_PICKER "Stop Bluetooth?" "NO" "YES" "NO")
-    [ "$CONFIRM" = "YES" ] && PROMPT "$(svc_stop blue5 "BLUETOOTH")"
+if [ "$BLUE_STATE" = "ON" ]; then
+    CONFIRM=$(LIST_PICKER "Stop Bluetooth Recon?" "NO" "YES" "NO")
+    if [ "$CONFIRM" = "YES" ]; then
+        bt_recon_set off
+        PROMPT "BLUETOOTH RECON
+
+$(bt_recon_state)"
+    fi
 else
-    CONFIRM=$(LIST_PICKER "Start Bluetooth?" "NO" "YES" "NO")
-    [ "$CONFIRM" = "YES" ] && PROMPT "$(svc_start blue5 "BLUETOOTH")"
+    CONFIRM=$(LIST_PICKER "Start Bluetooth Recon?" "NO" "YES" "NO")
+    if [ "$CONFIRM" = "YES" ]; then
+        bt_recon_set on
+        PROMPT "BLUETOOTH RECON
+
+$(bt_recon_state)"
+    fi
 fi
 ;;
 
@@ -474,7 +473,7 @@ esac
 "About")
 PROMPT "WHATSRUNNING
 
-Version 2.2.2
+Version 2.2.3
 
 Native Pager Utility
 

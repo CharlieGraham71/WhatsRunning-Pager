@@ -1,19 +1,15 @@
 # lib/kill.sh — service control for the "Service Control" screen.
+# NOTE: payload.sh inlines these; this file is a readable mirror. Keep in sync.
 #
-# Three different mechanisms, because the services are managed differently:
+# None of these services can be stopped by killing their process: pineapd and
+# blue5 are supervised by the Pineapple master, which respawns them within a
+# second. So each is controlled the way the firmware itself does it:
 #
-#   Bluetooth (blue5) is a normal procd service -> stop/start via its init
-#   script actually holds.
-#
-#   PineAP and recon are driven by pineapd, which is supervised by the
-#   Pineapple master process. If you stop pineapd it is respawned within a
-#   second, so you do NOT stop the process. Instead flip the config flags
-#   pineapd reads and reload it: pineap_disabled for PineAP, logrecon for
-#   recon logging.
+#   PineAP   -> pineap_disabled config flag + pineapd reload
+#   Recon    -> logrecon config flag + pineapd reload
+#   Bluetooth-> blue5ctl over the daemon's socket (end = stop, new = start)
 
-# ── blue5: a real service ───────────────────────────────────────────────────
-
-# svc_state NAME -> "running" | "stopped" (for an /etc/init.d service).
+# svc_state NAME -> "running" | "stopped"; used by recon_logging_set.
 svc_state() {
     if /etc/init.d/"$1" status 2>/dev/null | grep -qi running; then
         echo "running"
@@ -24,35 +20,23 @@ svc_state() {
     fi
 }
 
-# svc_stop NAME LABEL -> PROMPT body; confirms it actually stopped.
-svc_stop() {
-    /etc/init.d/"$1" stop >/dev/null 2>&1
-    sleep 1
-    if [ "$(svc_state "$1")" = "stopped" ]; then
-        echo "$2
+# ── Bluetooth: control the scan over blue5's socket, not the process ─────────
 
-STOPPED"
-    else
-        echo "$2
-
-STILL RUNNING
-(respawned?)"
-    fi
+# bt_recon_state -> "ON" | "OFF" | "--" from blue5ctl's db field.
+bt_recon_state() {
+    case "$(blue5ctl status 2>/dev/null | awk '/^db /{print $2}')" in
+        logging) echo "ON" ;;
+        ended)   echo "OFF" ;;
+        *)       echo "--" ;;
+    esac
 }
 
-# svc_start NAME LABEL -> PROMPT body; confirms it came up.
-svc_start() {
-    /etc/init.d/"$1" start >/dev/null 2>&1
-    sleep 1
-    if [ "$(svc_state "$1")" = "running" ]; then
-        echo "$2
-
-STARTED"
-    else
-        echo "$2
-
-FAILED TO START"
-    fi
+# bt_recon_set on|off -> end/new the blue5 database scan (daemon stays up).
+bt_recon_set() {
+    case "$1" in
+        off) blue5ctl end >/dev/null 2>&1 ;;
+        on)  blue5ctl new >/dev/null 2>&1 ;;   # no name = keep current scan name
+    esac
 }
 
 # ── PineAP: a config flag, not a process ─────────────────────────────────────
