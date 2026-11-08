@@ -10,6 +10,8 @@ SCRIPT_DIR=$(dirname "$0")
 
 # Shared helper: check_service() prints running services in a uniform format.
 . "$SCRIPT_DIR/lib/services.sh"
+# Service control: svc_state/svc_stop/svc_start/recon_logging_set.
+. "$SCRIPT_DIR/lib/kill.sh"
 
 # ── helpers ────────────────────────────────────────────────────────────────
 # Metrics are computed lazily (only inside the menu branch that needs them) so
@@ -111,6 +113,7 @@ CHOICE=$(LIST_PICKER \
 "RECON Status" \
 "Bluetooth Status" \
 "Running Services" \
+"Service Control" \
 "Storage" \
 "Clear Data" \
 "About" \
@@ -206,6 +209,76 @@ SERVICES=$(
 PROMPT "RUNNING SERVICES
 
 $SERVICES"
+;;
+
+"Service Control")
+
+PINEAP_STATE=$(pineap_state)
+BLUE_STATE=$(svc_state blue5)
+RECON_STATE=$(recon_status)
+
+SVC_CHOICE=$(LIST_PICKER \
+"Service Control" \
+"PineAP: $PINEAP_STATE" \
+"Bluetooth: $BLUE_STATE" \
+"Recon Log: $RECON_STATE" \
+"Back" \
+"Back")
+
+case "$SVC_CHOICE" in
+
+"PineAP: $PINEAP_STATE")
+# pineapd is respawned by the Pineapple supervisor, so toggle the PineAP flag
+# rather than stopping the process.
+if [ "$PINEAP_STATE" = "ON" ]; then
+    CONFIRM=$(LIST_PICKER "Turn PineAP OFF?" "NO" "YES" "NO")
+    if [ "$CONFIRM" = "YES" ]; then
+        pineap_set off
+        PROMPT "PINEAP
+
+$(pineap_state)"
+    fi
+else
+    CONFIRM=$(LIST_PICKER "Turn PineAP ON?" "NO" "YES" "NO")
+    if [ "$CONFIRM" = "YES" ]; then
+        pineap_set on
+        PROMPT "PINEAP
+
+$(pineap_state)"
+    fi
+fi
+;;
+
+"Bluetooth: $BLUE_STATE")
+if [ "$BLUE_STATE" = "running" ]; then
+    CONFIRM=$(LIST_PICKER "Stop Bluetooth?" "NO" "YES" "NO")
+    [ "$CONFIRM" = "YES" ] && PROMPT "$(svc_stop blue5 "BLUETOOTH")"
+else
+    CONFIRM=$(LIST_PICKER "Start Bluetooth?" "NO" "YES" "NO")
+    [ "$CONFIRM" = "YES" ] && PROMPT "$(svc_start blue5 "BLUETOOTH")"
+fi
+;;
+
+"Recon Log: $RECON_STATE")
+# Recon is a pineapd mode, not a service: toggling it leaves PineAP running.
+if [ "$RECON_STATE" = "ENABLED" ]; then
+    CONFIRM=$(LIST_PICKER "Turn Recon Logging OFF?" "NO" "YES" "NO")
+    [ "$CONFIRM" = "YES" ] && recon_logging_set 0
+else
+    CONFIRM=$(LIST_PICKER "Turn Recon Logging ON?" "NO" "YES" "NO")
+    [ "$CONFIRM" = "YES" ] && recon_logging_set 1
+fi
+if [ "$CONFIRM" = "YES" ]; then
+    PROMPT "RECON LOGGING
+
+$(recon_status)
+
+PineAP:
+$(svc_state pineapd)"
+fi
+;;
+
+esac
 ;;
 
 "Storage")
