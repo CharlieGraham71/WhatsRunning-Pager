@@ -16,19 +16,9 @@ export PATH="/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
 # has no lib/ and any `. lib/...` would silently fail. The lib/*.sh files in
 # the repo mirror these for readability. Keep the two in sync.
 
-# check_service NAME DESC: print a uniform block if process NAME is running.
-# pidof lives in /bin (always on PATH); first pid via pure shell (no awk/head).
-check_service() {
-    NAME="$1"
-    DESC="$2"
-    PID=$(pidof "$NAME" 2>/dev/null)
-    PID=${PID%% *}
-    if [ -n "$PID" ]; then
-        echo "[+] $NAME"
-        echo "    $DESC"
-        echo "    PID: $PID"
-        echo
-    fi
+# proc_updown NAME -> "UP" | "DOWN". pidof lives in /bin (always on PATH).
+proc_updown() {
+    pidof "$1" >/dev/null 2>&1 && echo "UP" || echo "DOWN"
 }
 
 # svc_state NAME -> "running" | "stopped" (an /etc/init.d service).
@@ -271,16 +261,24 @@ $(file_size /root/recon/blue5.db)"
 ;;
 
 "Running Services")
-SERVICES=$(
-    check_service pineapd  "Wireless Recon"
-    check_service hostapd  "Access Point"
-    check_service blue5    "Bluetooth Recon"
-    check_service dnsmasq  "DNS / DHCP"
-)
-[ -z "$SERVICES" ] && SERVICES="No monitored services running."
+# pineapd and blue5 always run (the supervisor respawns them), so their process
+# says nothing; show the feature state Service Control actually toggles.
 PROMPT "RUNNING SERVICES
 
-$SERVICES"
+PineAP:
+$(pineap_state)
+
+Recon Log:
+$(recon_status)
+
+Bluetooth:
+$(bt_recon_state)
+
+Access Point:
+$(proc_updown hostapd)
+
+DNS / DHCP:
+$(proc_updown dnsmasq)"
 ;;
 
 "Service Control")
@@ -473,7 +471,7 @@ esac
 "About")
 PROMPT "WHATSRUNNING
 
-Version 2.2.3
+Version 2.2.4
 
 Native Pager Utility
 
