@@ -17,7 +17,7 @@
 svc_state() {
     if /etc/init.d/"$1" status 2>/dev/null | grep -qi running; then
         echo "running"
-    elif pgrep "$1" >/dev/null 2>&1; then
+    elif pidof "$1" >/dev/null 2>&1 || pgrep "$1" >/dev/null 2>&1; then
         echo "running"
     else
         echo "stopped"

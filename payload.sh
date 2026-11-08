@@ -6,6 +6,11 @@
 # NOTE: busybox/ash compatible (no bashisms). If your pager runs payloads under
 # bash specifically, this still works; /bin/sh keeps it portable on OpenWrt.
 
+# The Pager's payload launcher runs us with a trimmed PATH that omits
+# /usr/bin, so tools like pgrep aren't found. Put the standard dirs back or
+# detection (and uci/init calls) silently find nothing.
+export PATH="/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
+
 SCRIPT_DIR=$(dirname "$0")
 
 # Shared helper: check_service() prints running services in a uniform format.
@@ -391,7 +396,7 @@ esac
 "About")
 PROMPT "WHATSRUNNING
 
-Version 2.2
+Version 2.2.1
 
 Native Pager Utility
 
